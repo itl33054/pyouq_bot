@@ -1,3 +1,4 @@
+python-telegram-bot
 pyrogram
 tgcrypto
 python-dotenv
@@ -5,3 +6,4 @@ APScheduler
 SQLAlchemy
 psycopg2-binary
 aiohttp
+
