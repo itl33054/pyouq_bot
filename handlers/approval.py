@@ -52,9 +52,15 @@ async def handle_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 original_caption = caption_parts[1]
         
         # --- V10.2 核心：添加作者页脚 ---
-        # 获取作者用户名和昵称
-        author_username = query.from_user.username or ""
-        author_name = query.from_user.full_name or "匿名用户"
+        # 获取投稿者的信息（从审核群消息中提取）
+        try:
+            # 从审核群消息获取投稿者的真实信息
+            submitter = await context.bot.get_chat(user_id)
+            author_username = submitter.username or ""
+            author_name = submitter.full_name or "匿名用户"
+        except:
+            author_username = ""
+            author_name = "匿名用户"
         
         # 构建作者链接（如果有用户名）
         if author_username:
