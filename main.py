@@ -10,7 +10,6 @@ from telegram.ext import (
     filters,
 )
 
-# --- 从我们自己的模块中，导入所有需要的“零件” ---
 from config import (
     TOKEN, 
     CHOOSING, 
@@ -43,11 +42,11 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     """
-    总装并启动机器人 (V9.7 - 终极调度修复版)。
+    总装并启动机器人 (V10.2 - 带作者页脚版)。
     """
     application = Application.builder().token(TOKEN).post_init(setup_database).build()
 
-    # --- 处理器 2.1: 单一、统一的对话处理器 ---
+    # --- 主对话处理器 ---
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
@@ -75,36 +74,22 @@ def main() -> None:
             CommandHandler("cancel", cancel),
             CommandHandler("start", start)
         ],
-        allow_reentry=True
+        allow_reentry=True,
+        per_message=False,
+        per_chat=True,
+        per_user=True,
     )
     application.add_handler(conv_handler)
-    
-    # --- 处理器 2.2: “发表评论”深度链接对话处理器 ---
-    # 我们保留这个独立的处理器，以确保深度链接的绝对可靠性
-    comment_conv_handler = ConversationHandler(
-        entry_points=[
-            CallbackQueryHandler(prompt_comment, pattern='^comment:add:')
-        ],
-        states={
-            COMMENTING: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_new_comment)
-            ],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-        conversation_timeout=300 
-    )
-    # application.add_handler(comment_conv_handler) # 暂时禁用，因为深度链接已合并到 start
 
-    # --- 处理器 2.3: 独立的后台/频道处理器 ---
+    # --- 独立的后台/频道处理器 ---
     application.add_handler(CallbackQueryHandler(handle_approval, pattern='^approve:'))
     application.add_handler(CallbackQueryHandler(handle_rejection, pattern='^decline:'))
-    
-    # --- V9.7 终极核心修复：让“超级接待员”接待所有访客！ ---
     application.add_handler(CallbackQueryHandler(handle_channel_interaction, pattern='^(react|collect|comment)'))
     
-    logger.info("机器人 V9.7 (终极调度修复版) 已启动...")
+    logger.info("🚀 机器人 V10.2 (带作者页脚版) 已启动...")
     
-    application.run_polling()
+    # 清除待处理的更新，避免冲突
+    application.run_polling(drop_pending_updates=True)
 
 
 if __name__ == '__main__':
