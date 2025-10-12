@@ -166,13 +166,17 @@ async def handle_channel_interaction(update: Update, context: ContextTypes.DEFAU
         # 2. 统一重新计算所有计数
         counts = await get_all_counts(db, message_id)
 
-        # 3. 统一重绘主按钮栏
-        new_main_keyboard = [[
-            InlineKeyboardButton(f"👍 赞 {counts['likes']}", callback_data=f"react:like:{message_id}"),
-            InlineKeyboardButton(f"👎 踩 {counts['dislikes']}", callback_data=f"react:dislike:{message_id}"),
-            InlineKeyboardButton(f"💬 评论 {counts['comments']}", callback_data=f"comment:show:{message_id}"),
-            InlineKeyboardButton(f"⭐ 收藏 {counts['collections']}", callback_data=f"collect:{message_id}"),
-        ]]
+        # 3. 统一重绘主按钮栏（两行布局）
+        new_main_keyboard = [
+            [
+                InlineKeyboardButton(f"👍 赞 {counts['likes']}", callback_data=f"react:like:{message_id}"),
+                InlineKeyboardButton(f"👎 踩 {counts['dislikes']}", callback_data=f"react:dislike:{message_id}"),
+                InlineKeyboardButton(f"⭐ 收藏 {counts['collections']}", callback_data=f"collect:{message_id}"),
+            ],
+            [
+                InlineKeyboardButton(f"💬 评论 {counts['comments']}", callback_data=f"comment:show:{message_id}"),
+            ]
+        ]
         reply_markup = InlineKeyboardMarkup(new_main_keyboard)
 
         # --- V10.1 核心优化：在编辑前进行比较 ---
