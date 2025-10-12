@@ -1,3 +1,7 @@
-python-telegram-bot[job-queue]==21.0.1
+pyrogram
+tgcrypto
 python-dotenv
-aiosqlite
+APScheduler
+SQLAlchemy
+psycopg2-binary
+aiohttp
