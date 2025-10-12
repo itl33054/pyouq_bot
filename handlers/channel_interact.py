@@ -40,7 +40,7 @@ async def get_all_counts(db, message_id: int) -> Dict[str, int]:
 
 async def build_comment_section(db, message_id: int) -> Tuple[str, int]:
     """
-    一个辅助函数，用于从数据库构建带“用户名超链接”的评论区文本。
+    一个辅助函数，用于从数据库构建带"用户名超链接"的评论区文本。
     """
     # 查询最近的5条评论
     cursor = await db.execute(
@@ -70,7 +70,7 @@ async def build_comment_section(db, message_id: int) -> Tuple[str, int]:
 
 async def handle_channel_interaction(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    处理频道内的所有按钮点击 (V10.1 - 消除重复编辑警告版)。
+    处理频道内的所有按钮点击 (V10.2 - 支持作者页脚版)。
     """
     query = update.callback_query
     await query.answer()
@@ -81,13 +81,37 @@ async def handle_channel_interaction(update: Update, context: ContextTypes.DEFAU
     action = callback_data[0]
 
     async with aiosqlite.connect(DB_NAME) as db:
-        # --- V10.0 核心：无论做什么，都先从数据库获取“原始标题” ---
+        # --- V10.2 核心：提取基础内容（原文 + 页脚，但不含评论区） ---
         cursor = await db.execute(
-            "SELECT content_text FROM submissions WHERE channel_message_id = ?",
+            "SELECT content_text, user_id, user_name FROM submissions WHERE channel_message_id = ?",
             (message_id,)
         )
-        db_caption_row = await cursor.fetchone()
-        base_caption = (db_caption_row[0] if db_caption_row else (query.message.caption or "")).split("\n\n--- 评论区 ---")[0]
+        db_row = await cursor.fetchone()
+        
+        if db_row:
+            content_text, author_id, author_name = db_row
+            
+            # 重建页脚
+            try:
+                author_chat = await context.bot.get_chat(author_id)
+                author_username = author_chat.username or ""
+            except:
+                author_username = ""
+            
+            if author_username:
+                author_link = f'<a href="https://t.me/{author_username}">👤 作者: {author_name}</a>'
+            else:
+                author_link = f'<a href="tg://user?id={author_id}">👤 作者: {author_name}</a>'
+            
+            my_link = f'<a href="https://t.me/{BOT_USERNAME}?start=main">📱 我的</a>'
+            footer = f"\n\n━━━━━━━━━━━━━━\n{author_link}  |  {my_link}"
+            
+            base_caption = (content_text or "") + footer
+        else:
+            # 如果数据库中没有记录，尝试从当前消息中提取
+            current_caption = query.message.caption_html or ""
+            # 去掉评论区部分
+            base_caption = current_caption.split("\n\n--- 评论区 ---")[0]
 
         # --- 动作分支 1: 展开/刷新评论区 ---
         if action == 'comment' and callback_data[1] in ['show', 'refresh']:
