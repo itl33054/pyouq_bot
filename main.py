@@ -51,7 +51,23 @@ def main() -> None:
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSING: [
-                CallbackQueryHandler(prompt_submission, pattern='^submit_post$'),
+                CallbackQueryHandler(prompt_submission, pattern='^submit_post
+    application.add_handler(conv_handler)
+
+    # --- 独立的后台/频道处理器 ---
+    application.add_handler(CallbackQueryHandler(handle_approval, pattern='^approve:'))
+    application.add_handler(CallbackQueryHandler(handle_rejection, pattern='^decline:'))
+    application.add_handler(CallbackQueryHandler(handle_channel_interaction, pattern='^(react|collect|comment)'))
+    
+    logger.info("🚀 机器人 V10.2 (带作者页脚版) 已启动...")
+    
+    # 清除待处理的更新，避免冲突
+    application.run_polling(drop_pending_updates=True)
+
+
+if __name__ == '__main__':
+    main()
+),
                 CallbackQueryHandler(navigate_my_posts, pattern='^my_posts_page:'),
                 CallbackQueryHandler(show_my_collections, pattern='^my_collections_page:'),
             ],
@@ -60,11 +76,43 @@ def main() -> None:
             ],
             BROWSING_POSTS: [
                 CallbackQueryHandler(navigate_my_posts, pattern='^my_posts_page:'),
-                CallbackQueryHandler(back_to_main, pattern='^back_to_main$'),
+                CallbackQueryHandler(back_to_main, pattern='^back_to_main
+    application.add_handler(conv_handler)
+
+    # --- 独立的后台/频道处理器 ---
+    application.add_handler(CallbackQueryHandler(handle_approval, pattern='^approve:'))
+    application.add_handler(CallbackQueryHandler(handle_rejection, pattern='^decline:'))
+    application.add_handler(CallbackQueryHandler(handle_channel_interaction, pattern='^(react|collect|comment)'))
+    
+    logger.info("🚀 机器人 V10.2 (带作者页脚版) 已启动...")
+    
+    # 清除待处理的更新，避免冲突
+    application.run_polling(drop_pending_updates=True)
+
+
+if __name__ == '__main__':
+    main()
+),
             ],
             BROWSING_COLLECTIONS: [
                 CallbackQueryHandler(show_my_collections, pattern='^my_collections_page:'),
-                CallbackQueryHandler(back_to_main, pattern='^back_to_main$'),
+                CallbackQueryHandler(back_to_main, pattern='^back_to_main
+    application.add_handler(conv_handler)
+
+    # --- 独立的后台/频道处理器 ---
+    application.add_handler(CallbackQueryHandler(handle_approval, pattern='^approve:'))
+    application.add_handler(CallbackQueryHandler(handle_rejection, pattern='^decline:'))
+    application.add_handler(CallbackQueryHandler(handle_channel_interaction, pattern='^(react|collect|comment)'))
+    
+    logger.info("🚀 机器人 V10.2 (带作者页脚版) 已启动...")
+    
+    # 清除待处理的更新，避免冲突
+    application.run_polling(drop_pending_updates=True)
+
+
+if __name__ == '__main__':
+    main()
+),
             ],
             COMMENTING: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_new_comment)
@@ -75,7 +123,7 @@ def main() -> None:
             CommandHandler("start", start)
         ],
         allow_reentry=True,
-        per_message=False,
+        per_message=True,  # 改为 True 来消除警告
         per_chat=True,
         per_user=True,
     )
