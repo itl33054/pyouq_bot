@@ -1,3 +1,4 @@
+
 # handlers/approval.py
 
 import aiosqlite
@@ -73,13 +74,17 @@ async def handle_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             )
             await db.commit()
         
-        # 5. 编辑频道消息，添加互动按钮
-        keyboard = [[
-            InlineKeyboardButton(f"👍 赞 0", callback_data=f"react:like:{msg_id}"),
-            InlineKeyboardButton(f"👎 踩 0", callback_data=f"react:dislike:{msg_id}"),
-            InlineKeyboardButton("💬 评论 0", callback_data=f"comment:show:{msg_id}"),
-            InlineKeyboardButton(f"⭐ 收藏 0", callback_data=f"collect:{msg_id}"),
-        ]]
+        # 5. 编辑频道消息，添加互动按钮（两行布局）
+        keyboard = [
+            [
+                InlineKeyboardButton(f"👍 赞 0", callback_data=f"react:like:{msg_id}"),
+                InlineKeyboardButton(f"👎 踩 0", callback_data=f"react:dislike:{msg_id}"),
+                InlineKeyboardButton(f"⭐ 收藏 0", callback_data=f"collect:{msg_id}"),
+            ],
+            [
+                InlineKeyboardButton("💬 评论 0", callback_data=f"comment:show:{msg_id}"),
+            ]
+        ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await context.bot.edit_message_caption(
