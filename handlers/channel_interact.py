@@ -99,9 +99,9 @@ async def handle_channel_interaction(update: Update, context: ContextTypes.DEFAU
                 author_username = ""
             
             if author_username:
-                author_link = f'<a href="https://t.me/{author_username}">👤 作者: {author_name}</a>'
+                author_link = f'👤 作者: <a href="https://t.me/{author_username}">{author_name}</a>'
             else:
-                author_link = f'<a href="tg://user?id={author_id}">👤 作者: {author_name}</a>'
+                author_link = f'👤 作者: <a href="tg://user?id={author_id}">{author_name}</a>'
             
             my_link = f'<a href="https://t.me/{BOT_USERNAME}?start=main">📱 我的</a>'
             footer = f"\n\n━━━━━━━━━━━━━━\n{author_link}  |  {my_link}"
