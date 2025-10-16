@@ -1,34 +1,44 @@
 # handlers/start_menu.py
 
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
-from config import CHOOSING, COMMENTING
-# 导入评论提示函数，以便直接调用
-from .commenting import prompt_comment 
+from config import CHOOSING
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+logger = logging.getLogger(__name__)
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    总入口函数，处理普通 /start 和深度链接 /start。
+    总入口函数，处理普通 /start 和深度链接 /start (V10.4.1)
     """
-    # --- V9.3 核心：检查深度链接参数 ---
+    # 检查深度链接参数
     if context.args and len(context.args) > 0:
         payload = context.args[0]
-        # 检查是否是评论深度链接，格式: "comment_MSGID"
+        
+        logger.info(f"收到深度链接: {payload}")
+        
+        # 评论深度链接
         if payload.startswith("comment_"):
+            from .commenting import prompt_comment
             message_id_str = payload.split("_", 1)[1]
             try:
                 message_id = int(message_id_str)
-                # 将 message_id 存入 context，以便 prompt_comment 函数可以获取
                 context.user_data['deep_link_message_id'] = message_id
-                
-                # 直接调用/跳转到发表评论的逻辑
+                logger.info(f"进入评论模式，帖子ID: {message_id}")
                 return await prompt_comment(update, context)
-            except (IndexError, ValueError):
-                # 如果参数格式不对，就忽略它，走下面的标准流程
-                pass
+            except (IndexError, ValueError) as e:
+                logger.error(f"解析评论链接失败: {e}")
+        
+        # 管理评论深度链接
+        elif payload.startswith("manage_comments_"):
+            from .comment_management import show_delete_comment_menu
+            logger.info(f"进入删除评论模式: {payload}")
+            # 直接返回函数的返回值，让状态正确传递
+            return await show_delete_comment_menu(update, context)
 
-    # --- 标准流程：显示主菜单 ---
+    # 标准流程：显示主菜单
     keyboard = [
         [
             InlineKeyboardButton("✍️ 发布朋友圈", callback_data='submit_post'),
@@ -40,7 +50,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # 如果是通过按钮返回，则编辑消息；如果是/start命令，则回复新消息
     if update.callback_query:
         await update.callback_query.edit_message_text("你好！请选择一个操作：", reply_markup=reply_markup)
     else:
@@ -48,9 +57,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         
     return CHOOSING
 
-async def back_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """处理“返回主菜单”的按钮点击，本质上是重新调用 start 函数的逻辑"""
+
+async def back_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """处理"返回主菜单"的按钮点击"""
     if update.callback_query:
         await update.callback_query.answer()
-    # 直接调用 start 函数来重绘主菜单
     return await start(update, context)

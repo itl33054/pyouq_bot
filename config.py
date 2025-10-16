@@ -13,10 +13,7 @@ try:
     CHANNEL_ID = os.environ['CHANNEL_ID']
     CHANNEL_USERNAME = os.environ['CHANNEL_USERNAME']
     DISCUSSION_GROUP_ID = int(os.environ['DISCUSSION_GROUP_ID'])
-    
-    # V9.3 新增：机器人自己的用户名 (不带@)
     BOT_USERNAME = os.environ['BOT_USERNAME']
-
     DB_NAME = "submissions.db"
 
 except KeyError as e:
@@ -29,5 +26,6 @@ except KeyError as e:
     GETTING_POST, 
     BROWSING_POSTS, 
     BROWSING_COLLECTIONS, 
-    COMMENTING
-) = range(5)
+    COMMENTING,
+    DELETING_COMMENT
+) = range(6)

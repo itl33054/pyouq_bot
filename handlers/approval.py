@@ -1,4 +1,3 @@
-
 # handlers/approval.py
 
 import aiosqlite
@@ -13,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    处理审核群的"通过"按钮 (V10.2 - 带作者页脚版)
-    """
+    """处理审核群的"通过"按钮 (V10.4)"""
     query = update.callback_query
     await query.answer()
 
@@ -111,9 +108,7 @@ async def handle_approval(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def handle_rejection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    处理审核群的"拒绝"按钮
-    """
+    """处理审核群的"拒绝"按钮"""
     query = update.callback_query
     await query.answer()
 

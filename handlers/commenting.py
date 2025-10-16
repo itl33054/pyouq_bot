@@ -4,21 +4,18 @@ import aiosqlite
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
+from telegram.constants import ParseMode
+from telegram.error import TelegramError
 
-from config import DB_NAME, COMMENTING, CHANNEL_ID
-# 导入 channel_interact 中的函数，以便在评论成功后调用它来刷新评论区
-# (这是一个高级功能，暂时简化为通知)
+from config import DB_NAME, COMMENTING, CHANNEL_USERNAME
 
 logger = logging.getLogger(__name__)
 
 async def prompt_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    提示用户输入评论，由深度链接或按钮点击触发。
-    """
+    """提示用户输入评论"""
     message_id = None
     user_id = update.effective_user.id
     
-    # --- V9.3 核心：统一处理入口 ---
     if 'deep_link_message_id' in context.user_data:
         message_id = context.user_data.pop('deep_link_message_id')
     
@@ -36,9 +33,7 @@ async def prompt_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def handle_new_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    接收用户的评论文本，存入数据库，并通知用户。
-    """
+    """接收用户的评论文本，存入数据库，并通知作者"""
     user = update.message.from_user
     comment_text = update.message.text
     
@@ -49,13 +44,50 @@ async def handle_new_comment(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
 
     async with aiosqlite.connect(DB_NAME) as db:
+        # 保存评论
         await db.execute(
             "INSERT INTO comments (channel_message_id, user_id, user_name, comment_text) VALUES (?, ?, ?, ?)",
             (message_id, user.id, user.full_name, comment_text)
         )
         await db.commit()
+        
+        # 获取作者信息并发送通知
+        cursor = await db.execute(
+            "SELECT user_id, content_text FROM submissions WHERE channel_message_id = ?",
+            (message_id,)
+        )
+        post_info = await cursor.fetchone()
 
     await update.message.reply_text("✅ 评论成功！\n\n帖子的评论数将在下次有人互动时更新。")
+
+    # 发送通知给作者
+    if post_info:
+        author_id, content_text = post_info
+        
+        # 不给自己发通知
+        if author_id != user.id:
+            # 生成链接
+            post_url = f"https://t.me/{CHANNEL_USERNAME}/{message_id}"
+            actor_link = f'<a href="tg://user?id={user.id}">{user.full_name}</a>'
+            
+            preview_text = (content_text or "你的作品")[:30]
+            preview_text = preview_text.replace('<', '&lt;').replace('>', '&gt;')
+            if len(content_text or "") > 30:
+                preview_text += "..."
+            post_link = f'<a href="{post_url}">{preview_text}</a>'
+            
+            notification_message = f"💬 {actor_link} 评论了你的作品 {post_link}\n\n评论内容：{comment_text[:50]}{'...' if len(comment_text) > 50 else ''}"
+            
+            try:
+                await context.bot.send_message(
+                    chat_id=author_id,
+                    text=notification_message,
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=False
+                )
+                logger.info(f"评论通知已发送给作者 {author_id}")
+            except TelegramError as e:
+                logger.warning(f"发送评论通知失败: {e}")
 
     context.user_data.clear()
     return ConversationHandler.END
